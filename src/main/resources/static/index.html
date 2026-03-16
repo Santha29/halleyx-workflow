@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Halleyx Workflow Engine</title>
+<style>
+  :root {
+    --primary: #1a7f5e; --primary-dark: #145f47; --primary-light: #e8f5f0;
+    --accent: #f59e0b; --danger: #ef4444; --success: #10b981; --info: #3b82f6;
+    --bg: #f0f4f8; --card: #ffffff; --text: #1e293b; --muted: #64748b;
+    --border: #e2e8f0; --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--primary); color: #fff; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  header h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.5px; }
+  header span { font-size: 0.8rem; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; }
+  .nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 4px; }
+  .nav-btn { padding: 14px 20px; border: none; background: none; cursor: pointer; font-size: 0.9rem; color: var(--muted); border-bottom: 3px solid transparent; transition: all .2s; font-weight: 500; }
+  .nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .nav-btn:hover { color: var(--primary); background: var(--primary-light); }
+  .page { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; }
+  .card { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; border: 1px solid var(--border); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .card-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  .btn { padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-info { background: var(--info); color: white; }
+  .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
+  .btn-outline:hover { background: var(--primary-light); }
+  .btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+  .btn-xs { padding: 3px 8px; font-size: 0.72rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--bg); padding: 12px 16px; text-align: left; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  td { padding: 13px 16px; border-top: 1px solid var(--border); font-size: 0.88rem; }
+  tr:hover td { background: var(--primary-light); }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; display: inline-block; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-active { background: #d1fae5; color: #065f46; }
+  .badge-inactive { background: #fee2e2; color: #991b1b; }
+  .badge-completed { background: #d1fae5; color: #065f46; }
+  .badge-failed { background: #fee2e2; color: #991b1b; }
+  .badge-pending { background: #fef3c7; color: #92400e; }
+  .badge-in_progress { background: #dbeafe; color: #1e40af; }
+  .badge-canceled { background: #f3f4f6; color: #374151; }
+  .badge-task { background: #e0f2fe; color: #0369a1; }
+  .badge-approval { background: #fae8ff; color: #7e22ce; }
+  .badge-notification { background: #fef3c7; color: #92400e; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 28px; width: 540px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 20px; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+  input, select, textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.9rem; transition: border .2s; outline: none; font-family: inherit; }
+  input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,127,94,0.1); }
+  textarea { resize: vertical; min-height: 80px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .close-btn { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--muted); line-height: 1; }
+  .close-btn:hover { color: var(--danger); }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .search-bar { display: flex; gap: 10px; margin-bottom: 18px; align-items: center; flex-wrap: wrap; }
+  .search-bar input { max-width: 280px; }
+  .search-bar select { max-width: 180px; width: auto; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--card); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+  .stat-icon.green { background: #d1fae5; }
+  .stat-icon.blue { background: #dbeafe; }
+  .stat-icon.purple { background: #ede9fe; }
+  .stat-icon.yellow { background: #fef3c7; }
+  .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 3.5rem; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 0.95rem; }
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-item { border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .step-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--bg); cursor: pointer; }
+  .step-order { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+  .step-body { padding: 16px 18px; background: white; display: none; }
+  .step-body.open { display: block; }
+  .rule-list { display: flex; flex-direction: column; gap: 8px; }
+  .rule-item { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .rule-condition { font-family: 'Consolas', monospace; font-size: 0.82rem; color: #1e40af; background: #dbeafe; padding: 3px 8px; border-radius: 4px; }
+  .log-item { display: flex; gap: 14px; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border); background: #fafafa; }
+  .log-step-num { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; flex-shrink: 0; }
+  .log-content { flex: 1; }
+  .log-step-name { font-weight: 700; font-size: 0.88rem; }
+  .log-message { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+  .log-rule { font-family: monospace; font-size: 0.78rem; background: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block; }
+  .loading { text-align: center; padding: 40px; color: var(--muted); }
+  .loading::after { content: ''; display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin-left: 10px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pagination { display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 20px; }
+  .pagination button { width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid var(--border); background: white; cursor: pointer; font-size: 0.85rem; transition: all .2s; }
+  .pagination button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+  .pagination button.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .pagination button:disabled { opacity: 0.4; cursor: default; }
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; color: white; font-size: 0.88rem; font-weight: 600; z-index: 9999; transform: translateY(100px); transition: transform .3s; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+  .toast.show { transform: translateY(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  .toast.info { background: var(--info); }
+  .execution-timeline { position: relative; padding-left: 30px; }
+  .timeline-item { position: relative; padding-bottom: 20px; }
+  .timeline-item::before { content: ''; position: absolute; left: -23px; top: 14px; bottom: 0; width: 2px; background: var(--border); }
+  .timeline-item:last-child::before { display: none; }
+  .timeline-dot { position: absolute; left: -30px; top: 10px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 2px var(--border); }
+  .timeline-dot.completed { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+  .timeline-dot.failed { background: var(--danger); box-shadow: 0 0 0 2px var(--danger); }
+  .timeline-dot.pending { background: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.82rem; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width: 768px) { .two-col, .form-row { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ Halleyx Workflow Engine</h1>
+  <span id="api-status">● Connected</span>
+</header>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('dashboard')">📊 Dashboard</button>
+  <button class="nav-btn" onclick="showPage('workflows')">🔄 Workflows</button>
+  <button class="nav-btn" onclick="showPage('executions')">▶️ Executions</button>
+  <button class="nav-btn" onclick="showPage('audit')">📋 Audit Log</button>
+</nav>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card"><div class="stat-icon green">🔄</div><div><div class="stat-value" id="stat-workflows">-</div><div class="stat-label">Total Workflows</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">▶️</div><div><div class="stat-value" id="stat-executions">-</div><div class="stat-label">Total Executions</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-value" id="stat-completed">-</div><div class="stat-label">Completed</div></div></div>
+    <div class="stat-card"><div class="stat-icon yellow">❌</div><div><div class="stat-value" id="stat-failed">-</div><div class="stat-label">Failed</div></div></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Recent Executions</span></div>
+      <div id="recent-executions"><div class="loading">Loading</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Active Workflows</span></div>
+      <div id="active-workflows"><div class="loading">Loading</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- WORKFLOWS -->
+<div id="page-workflows" class="page">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Workflows</span>
+      <button class="btn btn-primary" onclick="openWorkflowModal()">+ Create Workflow</button>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="wf-search" placeholder="🔍 Search workflows..." oninput="loadWorkflows(0)"/>
+      <select id="wf-status" onchange="loadWorkflows(0)">
+        <option value="">All Status</option>
+        <option value="true">Active</option>
+        <option value="false">Inactive</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="loadWorkflows(0)">Refresh</button>
+    </div>
+    <div id="workflows-table"><div class="loading">Loading</div></div>
+    <div id="wf-pagination" class="pagination"></div>
+  </div>
+</div>
+
+<!-- WORKFLOW DETAIL -->
+<div id="page-workflow-detail" class="page">
+  <div style="margin-bottom:16px;">
+    <button class="btn btn-outline btn-sm" onclick="showPage('workflows')">← Back</button>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title" id="detail-wf-name">Workflow Detail</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="editCurrentWorkflow()">✏️ Edit</button>
+          <button class="btn btn-success btn-sm" onclick="openExecuteModal()">▶ Execute</button>
+        </div>
+      </div>
+      <div id="detail-wf-info"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Steps</span>
+        <button class="btn btn-primary btn-sm" onclick="openStepModal()">+ Add Step</button>
+      </div>
+      <div id="detail-steps"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EXECUTIONS -->
+<div id="page-executions" class="page">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Executions</span>
+      <button class="btn btn-outline btn-sm" onclick="loadExecutions(0)">🔄 Refresh</button>
+    </div>
+    <div class="search-bar">
+      <select id="exec-status" onchange="loadExecutions(0)">
+        <option value="">All Status</option>
+        <option value="COMPLETED">Completed</option>
+        <option value="FAILED">Failed</option>
+        <option value="IN_PROGRESS">In Progress</option>
+        <option value="CANCELED">Canceled</option>
+        <option value="PENDING">Pending</option>
+      </select>
+    </div>
+    <div id="executions-table"><div class="loading">Loading</div></div>
+    <div id="exec-pagination" class="pagination"></div>
+  </div>
+</div>
+
+<!-- EXECUTION DETAIL -->
+<div id="page-execution-detail" class="page">
+  <div style="margin-bottom:16px;">
+    <button class="btn btn-outline btn-sm" onclick="showPage('executions')">← Back</button>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Execution Details</span>
+        <div id="exec-detail-actions" style="display:flex;gap:8px;"></div>
+      </div>
+      <div id="exec-detail-info"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Step Execution Timeline</span></div>
+      <div id="exec-detail-logs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AUDIT LOG -->
+<div id="page-audit" class="page">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Audit Log — All Executions</span>
+      <button class="btn btn-outline btn-sm" onclick="loadAudit(0)">🔄 Refresh</button>
+    </div>
+    <div id="audit-table"><div class="loading">Loading</div></div>
+    <div id="audit-pagination" class="pagination"></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-workflow">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="wf-modal-title">Create Workflow</span>
+      <button class="close-btn" onclick="closeModal('modal-workflow')">×</button>
+    </div>
+    <div class="form-group"><label>Workflow Name *</label><input id="wf-name" placeholder="e.g. Expense Approval"/></div>
+    <div class="form-group"><label>Description</label><textarea id="wf-desc" placeholder="Describe this workflow..."></textarea></div>
+    <div class="form-group"><label>Input Schema (JSON)</label><textarea id="wf-schema" style="font-family:monospace;font-size:0.82rem;" placeholder='{"required":["amount","country"],"fields":{"amount":"number","country":"string"}}'></textarea></div>
+    <div class="form-group"><label>Status</label><select id="wf-active"><option value="true">Active</option><option value="false">Inactive</option></select></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-workflow')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveWorkflow()">Save Workflow</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-step">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="step-modal-title">Add Step</span>
+      <button class="close-btn" onclick="closeModal('modal-step')">×</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Step Name *</label><input id="step-name" placeholder="e.g. Manager Approval"/></div>
+      <div class="form-group"><label>Step Type *</label>
+        <select id="step-type">
+          <option value="TASK">Task</option>
+          <option value="APPROVAL">Approval</option>
+          <option value="NOTIFICATION">Notification</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Order</label><input id="step-order" type="number" min="1" placeholder="Auto"/></div>
+    <div class="form-group"><label>Metadata (JSON)</label>
+      <textarea id="step-metadata" style="font-family:monospace;font-size:0.82rem;" placeholder='{"assignee_email":"manager@co.com","instructions":"Review request"}'></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-step')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStep()">Save Step</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-rule">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="rule-modal-title">Add Rule</span>
+      <button class="close-btn" onclick="closeModal('modal-rule')">×</button>
+    </div>
+    <div class="form-group">
+      <label>Condition *</label>
+      <input id="rule-condition" placeholder='e.g. amount > 100 && country == "US"  or  DEFAULT'/>
+      <small style="color:var(--muted);font-size:0.75rem;margin-top:4px;display:block;">Operators: ==, !=, &gt;, &lt;, &gt;=, &lt;=, &amp;&amp;, ||, contains(), startsWith(), endsWith(), DEFAULT</small>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Next Step ID</label><input id="rule-next-step" placeholder="Leave empty to end workflow"/></div>
+      <div class="form-group"><label>Priority *</label><input id="rule-priority" type="number" min="1" placeholder="1"/></div>
+    </div>
+    <div class="form-group"><label>Description</label><input id="rule-desc" placeholder="What this rule does"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-rule')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRule()">Save Rule</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-execute">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Execute Workflow</span>
+      <button class="close-btn" onclick="closeModal('modal-execute')">×</button>
+    </div>
+    <div class="form-group">
+      <label>Input Data (JSON)</label>
+      <textarea id="exec-input" style="font-family:monospace;font-size:0.85rem;min-height:140px;" placeholder='{"amount": 500, "country": "US", "priority": "High"}'></textarea>
+    </div>
+    <div class="form-group"><label>Triggered By</label><input id="exec-triggered-by" placeholder="user@example.com"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-execute')">Cancel</button>
+      <button class="btn btn-success" onclick="executeWorkflow()">▶ Execute Now</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API = '/api/v1';
+let currentWorkflowId = null, currentStepId = null, editingWorkflowId = null, editingStepId = null, editingRuleId = null;
+let wfPage = 0, execPage = 0, auditPage = 0;
+
+// ---- Navigation ----
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const map = { dashboard: 0, workflows: 1, executions: 2, audit: 3 };
+  const navBtns = document.querySelectorAll('.nav-btn');
+  if (map[name] !== undefined) navBtns[map[name]].classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'workflows') loadWorkflows(0);
+  if (name === 'executions') loadExecutions(0);
+  if (name === 'audit') loadAudit(0);
+}
+
+// ---- API ----
+async function api(method, path, body) {
+  const r = await fetch(API + path, {
+    method, headers: {'Content-Type':'application/json'},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const json = await r.json();
+  if (!json.success && r.status >= 400) throw new Error(json.message || 'API Error');
+  return json;
+}
+
+// ---- Toast ----
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ---- Dashboard ----
+async function loadDashboard() {
+  try {
+    const [wfs, execs, completed, failed] = await Promise.all([
+      api('GET', '/workflows?size=1'),
+      api('GET', '/executions?size=1'),
+      api('GET', '/executions?status=COMPLETED&size=1'),
+      api('GET', '/executions?status=FAILED&size=1')
+    ]);
+    document.getElementById('stat-workflows').textContent = wfs.data.totalElements;
+    document.getElementById('stat-executions').textContent = execs.data.totalElements;
+    document.getElementById('stat-completed').textContent = completed.data.totalElements;
+    document.getElementById('stat-failed').textContent = failed.data.totalElements;
+
+    const recentExecs = await api('GET', '/executions?size=5&sort=startedAt,desc');
+    const re = document.getElementById('recent-executions');
+    if (recentExecs.data.content.length === 0) { re.innerHTML = '<div class="empty-state"><div class="icon">▶️</div><p>No executions yet</p></div>'; return; }
+    re.innerHTML = '<table><thead><tr><th>Workflow</th><th>Status</th><th>Started</th></tr></thead><tbody>' +
+      recentExecs.data.content.map(e => `<tr style="cursor:pointer" onclick="viewExecution('${e.id}')">
+        <td><strong>${e.workflowName || e.workflowId}</strong><br><small style="color:var(--muted)">v${e.workflowVersion}</small></td>
+        <td><span class="badge badge-${e.status.toLowerCase()}">${e.status}</span></td>
+        <td style="font-size:0.78rem;color:var(--muted)">${fmtDate(e.startedAt)}</td>
+      </tr>`).join('') + '</tbody></table>';
+
+    const activeWfs = await api('GET', '/workflows?isActive=true&size=5');
+    const aw = document.getElementById('active-workflows');
+    if (activeWfs.data.content.length === 0) { aw.innerHTML = '<div class="empty-state"><div class="icon">🔄</div><p>No active workflows</p></div>'; return; }
+    aw.innerHTML = '<table><thead><tr><th>Name</th><th>Steps</th><th>Version</th></tr></thead><tbody>' +
+      activeWfs.data.content.map(w => `<tr style="cursor:pointer" onclick="viewWorkflow('${w.id}')">
+        <td><strong>${w.name}</strong></td>
+        <td><span class="badge badge-active">${w.stepCount} steps</span></td>
+        <td>v${w.version}</td>
+      </tr>`).join('') + '</tbody></table>';
+  } catch(e) { toast('Dashboard load error: ' + e.message, 'error'); }
+}
+
+// ---- Workflows ----
+async function loadWorkflows(page) {
+  wfPage = page;
+  const name = document.getElementById('wf-search').value;
+  const isActive = document.getElementById('wf-status').value;
+  let q = `?page=${page}&size=10&sort=createdAt,desc`;
+  if (name) q += `&name=${encodeURIComponent(name)}`;
+  if (isActive !== '') q += `&isActive=${isActive}`;
+  const el = document.getElementById('workflows-table');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const res = await api('GET', '/workflows' + q);
+    const {content, totalPages, totalElements} = res.data;
+    if (content.length === 0) { el.innerHTML = '<div class="empty-state"><div class="icon">🔄</div><p>No workflows found</p></div>'; return; }
+    el.innerHTML = `<table><thead><tr><th>ID</th><th>Name</th><th>Steps</th><th>Version</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>
+      ${content.map(w => `<tr>
+        <td><code style="font-size:0.7rem">${w.id.substring(0,8)}...</code></td>
+        <td><strong style="cursor:pointer;color:var(--primary)" onclick="viewWorkflow('${w.id}')">${w.name}</strong>${w.description ? `<br><small style="color:var(--muted)">${w.description.substring(0,50)}</small>` : ''}</td>
+        <td>${w.stepCount}</td>
+        <td>v${w.version}</td>
+        <td><span class="badge badge-${w.isActive ? 'active' : 'inactive'}">${w.isActive ? 'Active' : 'Inactive'}</span></td>
+        <td style="font-size:0.78rem;color:var(--muted)">${fmtDate(w.createdAt)}</td>
+        <td><div style="display:flex;gap:5px">
+          <button class="btn btn-outline btn-xs" onclick="viewWorkflow('${w.id}')">View</button>
+          <button class="btn btn-success btn-xs" onclick="currentWorkflowId='${w.id}';openExecuteModal()">▶</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteWorkflow('${w.id}','${w.name}')">🗑</button>
+        </div></td>
+      </tr>`).join('')}</tbody></table>`;
+    renderPagination('wf-pagination', page, totalPages, loadWorkflows);
+  } catch(e) { el.innerHTML = `<div class="empty-state"><p>Error: ${e.message}</p></div>`; }
+}
+
+async function viewWorkflow(id) {
+  currentWorkflowId = id;
+  showPage('workflow-detail');
+  const [wfRes] = await Promise.all([api('GET', '/workflows/' + id)]);
+  const wf = wfRes.data;
+  document.getElementById('detail-wf-name').textContent = wf.name;
+  document.getElementById('detail-wf-info').innerHTML = `
+    <table>
+      <tr><td style="color:var(--muted);width:110px;font-size:0.82rem">ID</td><td><code style="font-size:0.78rem">${wf.id}</code></td></tr>
+      <tr><td style="color:var(--muted);font-size:0.82rem">Description</td><td>${wf.description || '<span style="color:var(--muted)">—</span>'}</td></tr>
+      <tr><td style="color:var(--muted);font-size:0.82rem">Version</td><td>v${wf.version}</td></tr>
+      <tr><td style="color:var(--muted);font-size:0.82rem">Status</td><td><span class="badge badge-${wf.isActive ? 'active' : 'inactive'}">${wf.isActive ? 'Active' : 'Inactive'}</span></td></tr>
+      <tr><td style="color:var(--muted);font-size:0.82rem">Start Step</td><td><code style="font-size:0.78rem">${wf.startStepId ? wf.startStepId.substring(0,12) + '...' : '—'}</code></td></tr>
+      <tr><td style="color:var(--muted);font-size:0.82rem">Input Schema</td><td><pre style="font-size:0.75rem;background:#f8fafc;padding:8px;border-radius:6px;overflow-x:auto">${wf.inputSchema ? JSON.stringify(JSON.parse(wf.inputSchema), null, 2) : '—'}</pre></td></tr>
+      <tr><td style="color:var(--muted);font-size:0.82rem">Created</td><td>${fmtDate(wf.createdAt)}</td></tr>
+    </table>`;
+  renderSteps(wf.steps || [], wf);
+}
+
+function renderSteps(steps, wf) {
+  const el = document.getElementById('detail-steps');
+  if (!steps.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No steps yet. Add your first step!</p></div>'; return; }
+  el.innerHTML = '<div class="step-list">' + steps.map((s, i) => `
+    <div class="step-item">
+      <div class="step-header" onclick="toggleStep('step-body-${s.id}')">
+        <div class="step-order">${s.stepOrder || i+1}</div>
+        <div style="flex:1">
+          <strong>${s.name}</strong>
+          <div style="margin-top:2px"><span class="badge badge-${s.stepType.toLowerCase()}">${s.stepType}</span> <small style="color:var(--muted)">${s.ruleCount} rules</small></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openRuleModal('${s.id}')">+ Rule</button>
+          <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();deleteStep('${s.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="step-body" id="step-body-${s.id}">
+        ${s.metadata ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">Metadata: <code>${s.metadata}</code></p>` : ''}
+        <div class="rule-list">
+          ${(s.rules || []).length === 0 ? '<p style="color:var(--muted);font-size:0.82rem">No rules yet.</p>' : 
+            s.rules.map(r => `<div class="rule-item">
+              <div>
+                <span style="background:#f3f4f6;border-radius:4px;padding:2px 7px;font-size:0.75rem;font-weight:700;color:var(--muted)">P${r.priority}</span>
+                <span class="rule-condition">${r.condition}</span>
+                ${r.nextStepId ? `<span style="font-size:0.78rem;color:var(--muted)"> → <code>${r.nextStepId.substring(0,8)}...</code></span>` : '<span style="font-size:0.78rem;color:var(--muted)"> → END</span>'}
+                ${r.description ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:3px">${r.description}</div>` : ''}
+              </div>
+              <button class="btn btn-danger btn-xs" onclick="deleteRule('${r.id}','${wf.id}')">🗑</button>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+function toggleStep(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+function editCurrentWorkflow() { if (currentWorkflowId) openWorkflowModal(currentWorkflowId); }
+
+async function openWorkflowModal(id) {
+  editingWorkflowId = id || null;
+  document.getElementById('wf-modal-title').textContent = id ? 'Edit Workflow' : 'Create Workflow';
+  document.getElementById('wf-name').value = '';
+  document.getElementById('wf-desc').value = '';
+  document.getElementById('wf-schema').value = '';
+  document.getElementById('wf-active').value = 'true';
+  if (id) {
+    const res = await api('GET', '/workflows/' + id);
+    const w = res.data;
+    document.getElementById('wf-name').value = w.name;
+    document.getElementById('wf-desc').value = w.description || '';
+    document.getElementById('wf-schema').value = w.inputSchema || '';
+    document.getElementById('wf-active').value = w.isActive ? 'true' : 'false';
+  }
+  openModal('modal-workflow');
+}
+
+async function saveWorkflow() {
+  const body = {
+    name: document.getElementById('wf-name').value.trim(),
+    description: document.getElementById('wf-desc').value.trim(),
+    inputSchema: document.getElementById('wf-schema').value.trim() || null,
+    isActive: document.getElementById('wf-active').value === 'true'
+  };
+  if (!body.name) { toast('Workflow name is required', 'error'); return; }
+  try {
+    if (editingWorkflowId) {
+      await api('PUT', '/workflows/' + editingWorkflowId, body);
+      toast('Workflow updated! Version incremented ✓');
+      closeModal('modal-workflow');
+      viewWorkflow(editingWorkflowId);
+    } else {
+      const res = await api('POST', '/workflows', body);
+      toast('Workflow created successfully ✓');
+      closeModal('modal-workflow');
+      loadWorkflows(0);
+    }
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteWorkflow(id, name) {
+  if (!confirm(`Delete workflow "${name}"? This cannot be undone.`)) return;
+  try {
+    await api('DELETE', '/workflows/' + id);
+    toast('Workflow deleted'); loadWorkflows(wfPage);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ---- Steps ----
+function openStepModal(stepId) {
+  editingStepId = stepId || null;
+  document.getElementById('step-modal-title').textContent = stepId ? 'Edit Step' : 'Add Step';
+  document.getElementById('step-name').value = '';
+  document.getElementById('step-type').value = 'TASK';
+  document.getElementById('step-order').value = '';
+  document.getElementById('step-metadata').value = '';
+  openModal('modal-step');
+}
+
+async function saveStep() {
+  const body = {
+    name: document.getElementById('step-name').value.trim(),
+    stepType: document.getElementById('step-type').value,
+    stepOrder: document.getElementById('step-order').value ? parseInt(document.getElementById('step-order').value) : null,
+    metadata: document.getElementById('step-metadata').value.trim() || null
+  };
+  if (!body.name) { toast('Step name is required', 'error'); return; }
+  try {
+    if (editingStepId) {
+      await api('PUT', '/steps/' + editingStepId, body);
+      toast('Step updated ✓');
+    } else {
+      await api('POST', '/workflows/' + currentWorkflowId + '/steps', body);
+      toast('Step added ✓');
+    }
+    closeModal('modal-step');
+    viewWorkflow(currentWorkflowId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteStep(stepId) {
+  if (!confirm('Delete this step and all its rules?')) return;
+  try {
+    await api('DELETE', '/steps/' + stepId);
+    toast('Step deleted'); viewWorkflow(currentWorkflowId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ---- Rules ----
+function openRuleModal(stepId) {
+  currentStepId = stepId;
+  editingRuleId = null;
+  document.getElementById('rule-condition').value = '';
+  document.getElementById('rule-next-step').value = '';
+  document.getElementById('rule-priority').value = '';
+  document.getElementById('rule-desc').value = '';
+  openModal('modal-rule');
+}
+
+async function saveRule() {
+  const body = {
+    condition: document.getElementById('rule-condition').value.trim(),
+    nextStepId: document.getElementById('rule-next-step').value.trim() || null,
+    priority: parseInt(document.getElementById('rule-priority').value),
+    description: document.getElementById('rule-desc').value.trim() || null
+  };
+  if (!body.condition) { toast('Condition is required', 'error'); return; }
+  if (!body.priority || isNaN(body.priority)) { toast('Priority is required', 'error'); return; }
+  try {
+    await api('POST', '/steps/' + currentStepId + '/rules', body);
+    toast('Rule added ✓');
+    closeModal('modal-rule');
+    viewWorkflow(currentWorkflowId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteRule(ruleId, wfId) {
+  if (!confirm('Delete this rule?')) return;
+  try {
+    await api('DELETE', '/rules/' + ruleId);
+    toast('Rule deleted'); viewWorkflow(currentWorkflowId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ---- Execute ----
+function openExecuteModal() {
+  document.getElementById('exec-input').value = '{\n  "amount": 500,\n  "country": "US",\n  "priority": "High"\n}';
+  document.getElementById('exec-triggered-by').value = '';
+  openModal('modal-execute');
+}
+
+async function executeWorkflow() {
+  const inputRaw = document.getElementById('exec-input').value.trim();
+  let inputData = {};
+  if (inputRaw) {
+    try { inputData = JSON.parse(inputRaw); } catch(e) { toast('Invalid JSON in input data', 'error'); return; }
+  }
+  const body = { inputData, triggeredBy: document.getElementById('exec-triggered-by').value.trim() || 'ui-user' };
+  try {
+    const res = await api('POST', '/workflows/' + currentWorkflowId + '/execute', body);
+    toast('Workflow executed! Status: ' + res.data.status, res.data.status === 'COMPLETED' ? 'success' : 'info');
+    closeModal('modal-execute');
+    viewExecution(res.data.id);
+  } catch(e) { toast('Execution failed: ' + e.message, 'error'); }
+}
+
+// ---- Executions ----
+async function loadExecutions(page) {
+  execPage = page;
+  const status = document.getElementById('exec-status').value;
+  let q = `?page=${page}&size=10&sort=startedAt,desc`;
+  if (status) q += `&status=${status}`;
+  const el = document.getElementById('executions-table');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const res = await api('GET', '/executions' + q);
+    const {content, totalPages} = res.data;
+    if (!content.length) { el.innerHTML = '<div class="empty-state"><div class="icon">▶️</div><p>No executions yet</p></div>'; return; }
+    el.innerHTML = `<table><thead><tr><th>ID</th><th>Workflow</th><th>Status</th><th>Triggered By</th><th>Duration</th><th>Started</th><th>Actions</th></tr></thead><tbody>
+      ${content.map(e => `<tr>
+        <td><code style="font-size:0.7rem">${e.id.substring(0,8)}...</code></td>
+        <td><strong>${e.workflowName || e.workflowId}</strong><br><small style="color:var(--muted)">v${e.workflowVersion}</small></td>
+        <td><span class="badge badge-${e.status.toLowerCase()}">${e.status}</span></td>
+        <td style="font-size:0.82rem">${e.triggeredBy || '—'}</td>
+        <td style="font-size:0.82rem">${e.durationSeconds != null ? e.durationSeconds + 's' : '—'}</td>
+        <td style="font-size:0.78rem;color:var(--muted)">${fmtDate(e.startedAt)}</td>
+        <td><div style="display:flex;gap:5px">
+          <button class="btn btn-outline btn-xs" onclick="viewExecution('${e.id}')">View</button>
+          ${e.status === 'FAILED' ? `<button class="btn btn-info btn-xs" onclick="retryExecution('${e.id}')">Retry</button>` : ''}
+          ${(e.status === 'IN_PROGRESS' || e.status === 'PENDING') ? `<button class="btn btn-danger btn-xs" onclick="cancelExecution('${e.id}')">Cancel</button>` : ''}
+        </div></td>
+      </tr>`).join('')}</tbody></table>`;
+    renderPagination('exec-pagination', page, totalPages, loadExecutions);
+  } catch(e) { el.innerHTML = `<div class="empty-state"><p>Error: ${e.message}</p></div>`; }
+}
+
+async function viewExecution(id) {
+  showPage('execution-detail');
+  try {
+    const res = await api('GET', '/executions/' + id);
+    const e = res.data;
+    const actionsEl = document.getElementById('exec-detail-actions');
+    actionsEl.innerHTML = '';
+    if (e.status === 'FAILED') actionsEl.innerHTML += `<button class="btn btn-info btn-sm" onclick="retryExecution('${e.id}')">🔄 Retry</button>`;
+    if (e.status === 'IN_PROGRESS' || e.status === 'PENDING') actionsEl.innerHTML += `<button class="btn btn-danger btn-sm" onclick="cancelExecution('${e.id}')">⏹ Cancel</button>`;
+
+    document.getElementById('exec-detail-info').innerHTML = `
+      <table>
+        <tr><td style="color:var(--muted);width:120px;font-size:0.82rem">ID</td><td><code style="font-size:0.75rem">${e.id}</code></td></tr>
+        <tr><td style="color:var(--muted);font-size:0.82rem">Workflow</td><td><strong>${e.workflowName}</strong> v${e.workflowVersion}</td></tr>
+        <tr><td style="color:var(--muted);font-size:0.82rem">Status</td><td><span class="badge badge-${e.status.toLowerCase()}">${e.status}</span></td></tr>
+        <tr><td style="color:var(--muted);font-size:0.82rem">Triggered By</td><td>${e.triggeredBy || '—'}</td></tr>
+        <tr><td style="color:var(--muted);font-size:0.82rem">Retries</td><td>${e.retries}</td></tr>
+        <tr><td style="color:var(--muted);font-size:0.82rem">Duration</td><td>${e.durationSeconds != null ? e.durationSeconds + ' seconds' : '—'}</td></tr>
+        <tr><td style="color:var(--muted);font-size:0.82rem">Input Data</td><td><pre style="font-size:0.75rem;background:#f8fafc;padding:8px;border-radius:6px;overflow-x:auto">${JSON.stringify(e.inputData, null, 2)}</pre></td></tr>
+        ${e.errorMessage ? `<tr><td style="color:var(--muted);font-size:0.82rem">Error</td><td style="color:var(--danger);font-size:0.82rem">${e.errorMessage}</td></tr>` : ''}
+        <tr><td style="color:var(--muted);font-size:0.82rem">Started</td><td style="font-size:0.82rem">${fmtDate(e.startedAt)}</td></tr>
+        <tr><td style="color:var(--muted);font-size:0.82rem">Ended</td><td style="font-size:0.82rem">${fmtDate(e.endedAt)}</td></tr>
+      </table>`;
+
+    const logs = e.logs || [];
+    if (!logs.length) {
+      document.getElementById('exec-detail-logs').innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No step logs</p></div>';
+    } else {
+      document.getElementById('exec-detail-logs').innerHTML = '<div class="execution-timeline">' +
+        logs.map((l, i) => `<div class="timeline-item">
+          <div class="timeline-dot ${l.status ? l.status.toLowerCase() : 'pending'}"></div>
+          <div class="log-item">
+            <div class="log-step-num">${i+1}</div>
+            <div class="log-content">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="log-step-name">${l.stepName}</span>
+                <span class="badge badge-${l.status ? l.status.toLowerCase() : 'pending'}">${l.status || 'PENDING'}</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+                <span class="badge badge-${(l.stepType||'task').toLowerCase()}">${l.stepType || ''}</span>
+                ${l.durationMs != null ? `<span style="font-size:0.75rem;color:var(--muted)">${l.durationMs}ms</span>` : ''}
+                ${l.approverEmail ? `<span style="font-size:0.75rem;color:var(--muted)">👤 ${l.approverEmail}</span>` : ''}
+              </div>
+              ${l.ruleEvaluated ? `<div class="log-rule">Rule: ${l.ruleEvaluated}</div>` : ''}
+              ${l.nextStepName ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px">→ Next: <strong>${l.nextStepName}</strong></div>` : (l.nextStepId === null && l.status === 'COMPLETED' ? `<div style="font-size:0.78rem;color:var(--success);margin-top:4px">→ Workflow End</div>` : '')}
+              <div class="log-message">${l.message || ''}</div>
+            </div>
+          </div>
+        </div>`).join('') + '</div>';
+    }
+  } catch(err) { toast('Failed to load execution: ' + err.message, 'error'); }
+}
+
+async function retryExecution(id) {
+  try {
+    const res = await api('POST', '/executions/' + id + '/retry');
+    toast('Execution retried! Status: ' + res.data.status);
+    viewExecution(id);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function cancelExecution(id) {
+  try {
+    await api('POST', '/executions/' + id + '/cancel');
+    toast('Execution cancelled');
+    loadExecutions(execPage);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ---- Audit ----
+async function loadAudit(page) {
+  auditPage = page;
+  const el = document.getElementById('audit-table');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const res = await api('GET', `/executions?page=${page}&size=15&sort=startedAt,desc`);
+    const {content, totalPages} = res.data;
+    if (!content.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No audit records</p></div>'; return; }
+    el.innerHTML = `<table><thead><tr><th>Execution ID</th><th>Workflow</th><th>Version</th><th>Status</th><th>Triggered By</th><th>Start Time</th><th>Duration</th><th>Steps</th></tr></thead><tbody>
+      ${content.map(e => `<tr style="cursor:pointer" onclick="viewExecution('${e.id}')">
+        <td><code style="font-size:0.7rem">${e.id.substring(0,12)}...</code></td>
+        <td><strong>${e.workflowName || e.workflowId}</strong></td>
+        <td>v${e.workflowVersion}</td>
+        <td><span class="badge badge-${e.status.toLowerCase()}">${e.status}</span></td>
+        <td style="font-size:0.82rem">${e.triggeredBy || '—'}</td>
+        <td style="font-size:0.78rem;color:var(--muted)">${fmtDate(e.startedAt)}</td>
+        <td style="font-size:0.82rem">${e.durationSeconds != null ? e.durationSeconds + 's' : '—'}</td>
+        <td style="font-size:0.82rem">${(e.logs || []).length}</td>
+      </tr>`).join('')}</tbody></table>`;
+    renderPagination('audit-pagination', page, totalPages, loadAudit);
+  } catch(e) { el.innerHTML = `<div class="empty-state"><p>Error: ${e.message}</p></div>`; }
+}
+
+// ---- Utils ----
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleString('en-IN', {month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function renderPagination(containerId, current, total, fn) {
+  const el = document.getElementById(containerId);
+  if (total <= 1) { el.innerHTML = ''; return; }
+  let html = `<button onclick="fn(${current-1})" ${current===0?'disabled':''}>‹</button>`;
+  for (let i = 0; i < Math.min(total, 8); i++) {
+    html += `<button onclick="${fn.name}(${i})" class="${i===current?'active':''}">${i+1}</button>`;
+  }
+  html += `<button onclick="${fn.name}(${current+1})" ${current>=total-1?'disabled':''}>›</button>`;
+  el.innerHTML = html;
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// Initial load
+loadDashboard();
+</script>
+</body>
+</html>
