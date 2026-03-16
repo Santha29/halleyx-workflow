@@ -382,7 +382,7 @@ def retry_execution(exec_id: str):
 def serve_ui():
     html_path = os.path.join(os.path.dirname(__file__), "..", "halleyx-workflow/src/main/resources/static/index.html")
     if os.path.exists(html_path):
-        with open(html_path) as f: return f.read()
+        with open(html_path, encoding="utf-8") as f: return f.read()
     return "<h1>Halleyx Workflow Engine API Running!</h1><p>Go to /docs for Swagger UI</p>"
 
 # ── SEED DATA ──
