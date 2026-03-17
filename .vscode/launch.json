@@ -2,28 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "▶ Run Halleyx Workflow",
+      "name": "▶ Start Halleyx Workflow",
       "type": "python",
       "request": "launch",
-      "module": "uvicorn",
-      "args": ["main:app", "--reload", "--port", "8080"],
-      "jinja": true,
+      "program": "${workspaceFolder}/start.py",
+      "console": "integratedTerminal",
       "justMyCode": true,
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
-      }
-    },
-    {
-      "name": "🐛 Debug Halleyx Workflow",
-      "type": "python",
-      "request": "launch",
-      "module": "uvicorn",
-      "args": ["main:app", "--reload", "--port", "8080", "--log-level", "debug"],
-      "jinja": true,
-      "justMyCode": false,
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
-      }
+      "cwd": "${workspaceFolder}"
     }
   ]
 }
