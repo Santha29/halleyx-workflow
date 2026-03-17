@@ -1,9 +1,14 @@
 @echo off
+echo.
+echo  ================================
+echo   Halleyx Workflow Engine
+echo  ================================
+echo.
 echo Installing dependencies...
-pip install -r requirements.txt
+pip install fastapi uvicorn sqlalchemy pydantic -q
 echo.
-echo Starting Halleyx Workflow Engine...
-echo Open browser: http://localhost:8080
-echo Swagger API:  http://localhost:8080/docs
+if exist halleyx_workflow.db del halleyx_workflow.db
+echo Starting server...
+echo Open: http://localhost:8080
 echo.
-uvicorn main:app --reload --port 8080
+python start.py

@@ -1,26 +1,21 @@
 {
   "python.defaultInterpreterPath": "python",
-  "python.terminal.activateEnvironment": true,
-  "editor.formatOnSave": true,
-  "editor.tabSize": 4,
-  "editor.rulers": [100],
-  "files.exclude": {
-    "**/__pycache__": true,
-    "**/*.pyc": true,
-    "**/*.db": false,
-    ".git": true
+  "python.terminal.activateEnvironment": false,
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  "terminal.integrated.profiles.windows": {
+    "Command Prompt": {
+      "path": "cmd.exe"
+    }
   },
-  "editor.minimap.enabled": true,
-  "workbench.colorTheme": "Default Dark Modern",
-  "editor.bracketPairColorization.enabled": true,
-  "editor.guides.bracketPairs": true,
-  "editor.suggestSelection": "first",
-  "python.analysis.typeCheckingMode": "basic",
-  "python.analysis.autoImportCompletions": true,
   "[python]": {
     "editor.defaultFormatter": "ms-python.python"
   },
   "editor.fontSize": 14,
-  "editor.lineHeight": 1.6,
-  "terminal.integrated.defaultProfile.windows": "Command Prompt"
+  "editor.tabSize": 4,
+  "workbench.colorTheme": "Default Dark Modern",
+  "editor.bracketPairColorization.enabled": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  }
 }

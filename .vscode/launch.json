@@ -2,13 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "▶ Start Halleyx Workflow",
+      "name": "▶ Run Halleyx Workflow",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/start.py",
       "console": "integratedTerminal",
       "justMyCode": true,
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "python": "python"
     }
   ]
 }
